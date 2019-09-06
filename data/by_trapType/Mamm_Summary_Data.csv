@@ -1,0 +1,45 @@
+Sample,Species,Abbrev,PrDet,Mountain,FR_Hmin,FR_Hmax,FR_Hnum,FR_Cmin,FR_Cmax,FR_Cnum,SJ_Hmin,SJ_Hmax,SJ_Hnum,SJ_Cmin,SJ_Cmax,SJ_Cnum
+Large,Marmota flaviventris,Mafla,0.241,both,1628,3688,34,1863,3737,34,2334,3657,6,1866,3546,44
+Large,Neotoma cinerea,Necin,0.28,both,1628,3353,64,1549,2864,9,1418,3077,42,1750,2557,8
+Large,Otospermophilus variegatus,Otvar,0.241,both,1517,2134,41,1717,1717,1,1610,2202,20,1482,2530,25
+Large,Sciurus aberti,Scabe,0.241,both,1641,2638,38,1724,2673,12,2750,2850,2,2271,2366,5
+Large,Tamiasciurus  hudsonicus,Tahud,0.241,both,1766,3475,143,1882,3356,126,2134,3321,5,2338,3496,36
+Large,Urocitellus elegans,Urele,0.241,frng,1796,2678,53,2377,2438,9,NA,NA,NA,NA,NA,NA
+Sherman,Ammospermophilus leucurus,Amleu,0.241,sanj,NA,NA,NA,NA,NA,NA,1418,2134,13,1506,1735,6
+Sherman,Callospermophilus lateralis,Calat,0.17,both,1760,3388,135,1939,3356 ,100,1981,3109,33,2227,3524,70
+Sherman,Chaetodipus hispidus,Chhis,0.22,frng,1524,1632,3,1941,1941,1,NA,NA,NA,NA,NA,NA
+Sherman,Dipodomys ordii,Diord,0.22,both,1524,1890,29,NA,NA,0,1460,1640,6,1754,1759,2
+Sherman,Ictidomys tridecemlineatus,Ictri,0.241,frng,1492,1876,48,1545,1550,2,NA,NA,NA,NA,NA,NA
+Sherman,Microtus longicaudus,Milon,0.184,both,1506,3353,97,1704,3607,66,2050,2827,59,2079,3411,17
+Sherman,Microtus mogollonensis,Mimog,0.22,sanj,NA,NA,NA,NA,NA,NA,2133,2407,26,1494,2384,21
+Sherman,Microtus montanus,Mimon,0.122,both,1506,3528,129,1513,3725,62,1895,3407,57,1812,3519,81
+Sherman,Microtus ochrogaster,Mioch,0.228,frng,1484,2218,143,1532,2242,31,NA,NA,NA,NA,NA,NA
+Sherman,Microtus pennsylvanicus,Mipen,0.189,frng,1494,1984,269,1519,1942,9,NA,NA,NA,NA,NA,NA
+Sherman,Myodes gapperi,Mygap,0.21,both,2515,3353,102,2611,3310,59,2827,2840,10,2570,3530,83
+Sherman,Neotoma albigula,Nealb,0.257,sanj,NA,NA,NA,NA,NA,NA,1483,2085,17,1512,2020,20
+Sherman,Neotoma mexicana,Nemex,0.289,both,1489,2537,125,1538,2187,158,1610,2285,46,1715,2570,66
+Sherman,Perognathus fasciatus,Pefas,0.22,frng,1524,1524,10,NA,NA,0,NA,NA,NA,NA,NA,NA
+Sherman,Perognathus flavescens,Peflave,0.22,frng,1512,1770,2,NA,NA,0,NA,NA,NA,NA,NA,NA
+Sherman,Perognathus flavus,Peflavu,0.22,both,1524,1524,11,NA,NA,0,1524,1610,3,1484,1803,6
+Sherman,Peromyscus boylii,Peboy,0.434,both,1783,1829,1,1717,1717,5,1418,2444,44,1482,2510,96
+Sherman,Peromyscus crinitus,Pecri,0.372,sanj,NA,NA,NA,NA,NA,NA,1418,2307,31,NA,NA,0
+Sherman,Peromyscus maniculatus,Peman,0.429,both,1489,3588,931,1518,3731,1948,1418,3691,535,1486,3538,1481
+Sherman,Peromyscus nastutus,Penas,0.197,frng,1494,2560,167,1660,2155,81,NA,NA,NA,NA,NA,NA
+Sherman,Peromyscus truei,Petru,0.428,sanj,NA,NA,NA,NA,NA,NA,1418,2354,76,1481,2513,394
+Sherman,Phenacomys intermedius,Phint,0.175,both,2742,3673,19,2700,3700,37,NA,NA,0,2882,3526,44
+Sherman,Reithrodontomy megalotis,Remeg,0.234,both,1531,2084,53,1682,2239,169,1610,2597,30,1486,2426,60
+Sherman,Reithrodontomy montanus,Remon,0.233,frng,1524,1628,4,NA,NA,0,NA,NA,NA,NA,NA,NA
+Sherman,Tamias minimus,Tamin,0.24,both,1796,3600,302,1546,3492,445,1981,3407,130,1503,3559,1057
+Sherman,Tamias quadrivittatus,Taqua,0.238,both,1585,2795,49,1721,2659,60,1840,3386,29,2410,2570,13
+Sherman,Tamias rufus,Taruf,0.231,sanj,NA,NA,NA,NA,NA,NA,1418,2819,22,1503,2348,50
+Sherman,Tamias umbrinus,Taumb,0.325,frng,2134,3414,77,2343,3385,59,NA,NA,NA,NA,NA,NA
+Sherman,Xerospermophilus spilosoma,Xespi,0.241,both,1646,1646,1,NA,NA,0,2070,2070,3,NA,NA,0
+Sherman,Zapus hudsonicus preblei,Zahud,0.293,both,1553,1634,32,1726,2130,6,NA,NA,0,1944,1944,1
+Sherman,Zapus princeps,Zapri,0.293,both,2006,3259,109,2402,3140,89,2050,3407,25,2079,3433,30
+Shrew,Notiosorex crawfordi,Nocra,0.112,sanj,NA,NA,NA,NA,NA,NA,2381,2381,1,1484,1972,4
+Shrew,Sorex cinereus,Socin,0.2,both,1492,3353,77,2798,3452,63,NA,NA,0,2400,3521,117
+Shrew,Sorex hoyi,Sohoy,0.112,frng,2638,2936,22,2806,3447,16,NA,NA,NA,NA,NA,NA
+Shrew,Sorex merriami,Somer,0.112,both,1604,2005,4,1718,2242,2,2075,2192,2,NA,NA,0
+Shrew,Sorex monticolus,Somon,0.112,both,1628,3505,103,1726,3493,95,2115,2827,21,2507,3530,143
+Shrew,Sorex nanus,Sonan,0.112,both,1656,3673,4,2171,3650,17,2192,2192,1,2549,3514,6
+Shrew,Sorex palustris,Sopal,0.2,both,1591,3307,61,2786,2859,3,2697,3691,5,3393,3404,8
