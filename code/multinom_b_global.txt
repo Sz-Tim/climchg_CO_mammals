@@ -12,7 +12,7 @@ model{
     # occupancy and sampling effects
     for(j in 1:J) {
         Z[i,j] ~ dbern(psi[i,j])
-        logit(psi[i,j]) <- a[s] + 
+        logit(psi[i,j]) <- a[j] + 
           beta[1]*distAway[i,j] + 
           beta[2]*interpPatchy[j] +
           beta[3]*distAway[i,j]*interpPatchy[j]
@@ -20,13 +20,14 @@ model{
   }
   
   # Priors
-  alpha ~ dnorm(0, 0.1)
-  b[1] ~ dnorm(0, 0.1)
-  b[2] ~ dnorm(0, 0.1)
-  b[3] ~ dnorm(0, 0.1)
-  b[4] ~ dnorm(0, 0.1)
+  alpha ~ dnorm(0, 0.01)
+  tau <- 1/(sigma*sigma)
+  sigma ~ dnorm(0, 0.01) T(0, )
+  beta[1] ~ dnorm(0, 0.01)
+  beta[2] ~ dnorm(0, 0.01)
+  beta[3] ~ dnorm(0, 0.01)
   for(j in 1:J) {
-    a[s] ~ dnorm(alpha, 0.1)
+    a[j] ~ dnorm(alpha, tau)
     for(i in 1:n.el) {
       lambda[i,j] ~ dnorm(LAMBDA[j], 0.0001) T(0, )
     }
