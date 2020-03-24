@@ -1,0 +1,33 @@
+# Ecology review 1
+# Bessinger comments
+
+
+## Main critiques:
+- testing with simulated datasets
+	- previously:
+		- generate ranges
+		- generate true abundances in each bin
+		- sample from each bin
+	- generate communities across eras
+		- repurpose Ricker models
+		- each species from 1950 - 2010
+		- lambda ~ Temp + precip (?)
+		- shift Temp starting at 1980
+	- simulate sampling
+
+- sensitivity analyses
+	- elevational bin width
+	- detection probability
+	- relative abundance distribution
+	- absolute abundance distribution
+	- difference in total detections between eras
+
+- testing with real datasets
+	- compare contemporary with an occupancy model?
+		- would mean we couldn't use supplemental museum specimens
+
+- statistical theory (?)
+
+- expansions
+	- incorporate uncertainty into detection probabilities
+		- set as prior distributions 

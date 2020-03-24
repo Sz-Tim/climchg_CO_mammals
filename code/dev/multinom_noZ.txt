@@ -1,0 +1,32 @@
+
+model{
+  # Likelihood
+  for(i in 1:n.el) {
+  
+    # weighted species pool
+    spp_pool[i,1:J] <- N[i,1:J]*delta
+  
+    # detections from a multinomial distribution
+    Y[i,] ~ dmulti(spp_pool[i,1:n.spp]/sum(spp_pool[i,1:n.spp]), Ytot[i])
+    
+    # occupancy and sampling effects
+    for(s in 1:n.spp) {
+        N[i,s] ~ dpois(N_base[s]*PSI[i,s])
+        logit(PSI[i,s]) <- a[s] + 
+          b[1]*distAway[i,s] +
+          b[2]*interpPatchy[s] +
+          b[3]*interpPatchy[s]*distAway[i,s]
+    }
+  }
+  
+  # Priors
+  alpha ~ dnorm(0, 0.1)
+  b[1] ~ dnorm(0, 0.1)
+  b[2] ~ dnorm(0, 0.1)
+  b[3] ~ dnorm(0, 0.1)
+  b[4] ~ dnorm(0, 0.1)
+  for(s in 1:n.spp) {
+    a[s] ~ dnorm(alpha, 0.1)
+    N_base[s] ~ dnorm(spAbund[s], 0.0001) T(0, )
+  }
+}
