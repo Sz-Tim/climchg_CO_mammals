@@ -24,7 +24,7 @@ n.sim <- 10
 
 J <- 44  # number of species
 tmax <- 200  # number of years to simulate
-b <- 100  # bin size
+b <- 50  # bin size
 yrs.obs <- (-29:0)+tmax  # years to draw samples from
 
 
@@ -127,8 +127,13 @@ for(s in 1:n.sim) {
               mod.lo=sqrt(mean((mod.lo-true.lo)^2, na.rm=T)),
               mod.hi=sqrt(mean((mod.hi-true.hi)^2, na.rm=T))) %>%
     mutate(sim=s)
+  cat("\n--------------\n", 
+      "Finished", s, "of", n.sim,
+      "\n--------------\n")
 }
 
+
+write.csv(do.call('rbind', rmse.ls), paste0("out/RMSE_", b, ".csv"))
 do.call('rbind', rmse.ls) %>% 
   summarise(mnDiff.lo=mean(mod.lo-obs.lo, na.rm=T), 
             mnDiff.hi=mean(mod.hi-obs.hi, na.rm=T), 
