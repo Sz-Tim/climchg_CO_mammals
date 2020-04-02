@@ -17,9 +17,10 @@ ricker <- function(J, tmax, r.mn, r.sd, K) {
 
 
 
-simulate_communities <- function(J, els, beta, beta.sd, tmax) {
+simulate_communities <- function(J, els, pDet, beta, beta.sd, tmax) {
   # J: number of species
   # els: vector of elevations
+  # pDet: dataframe with species and dbeta parameters shp1, shp2
   # beta: vector of slopes (r.mn.ij = b0.j + b1.j * el.i + b2.j * el.i^2)
   # beta.sd: vector for sd in slopes among species
   # tmax: number of years to simulate
@@ -48,9 +49,12 @@ simulate_communities <- function(J, els, beta, beta.sd, tmax) {
     }
   }))) %>% unlist %>% array(dim=c(J, 2, tmax))
   
-  pDet <- rbeta(J, 7, 25)
+  pDet.par <- pDet %>% select(shp1, shp2) %>% as.matrix
   
-  return(list(N=N, Z=Z, rng=rng, pDet=pDet))
+  pDet.el <- map(1:n.els, ~rbeta(J, pDet$shp1, pDet$shp2)) %>%
+    do.call('rbind', .) 
+  
+  return(list(N=N, Z=Z, rng=rng, pDet.par=pDet.par, pDet.el=pDet.el))
 }
 
 
@@ -73,7 +77,7 @@ sample_community <- function(J, els, yrs.obs, comm.true, Ytot) {
   for(i in seq_along(els)) {
     if(Ytot[i] > 0) {
       for(k in yrs.samp[[i]]) {
-        spp.obs <- sample(1:J, 1, prob=comm.true$N[k,,i]*comm.true$pDet)
+        spp.obs <- sample(1:J, 1, prob=comm.true$N[k,,i]*comm.true$pDet.el[i,])
         Y[i,spp.obs] <- Y[i,spp.obs] + 1
       }
     }

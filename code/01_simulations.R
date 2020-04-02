@@ -5,13 +5,12 @@
 library(tidyverse); library(rjags); library(ggmcmc); theme_set(theme_bw())
 source("code/00_fn.R")
 sp.i <- read_csv("data/by_trapType/Mamm_Summary_Data.csv") # true data
-prDet.df <- readxl::read_xlsx("data/orig/Prob_Detection.xlsx", 1) %>%
-  select(Species, 5:36) %>% 
-  pivot_longer(2:33, names_to="Site", values_to="prDet", values_drop_na=T)
+pDet.full <- read_csv("data/prDet_processed.csv")
+
 
 # assumptions
 # - relAbundance (on avg) at each trapping location = relAbundance of bin
-# - pr(detect individual) is constant within species and across years
+# - pr(detect individual) is drawn from a species-specific distribution
 # - elevational range = minimum and maximum during sampling time period
 
 # For each species j in elevational bin i:
@@ -22,9 +21,10 @@ prDet.df <- readxl::read_xlsx("data/orig/Prob_Detection.xlsx", 1) %>%
 
 sets <- expand.grid(b=c(25, 50, 100, 200),
                     mtn=c("FR", "SJ"), 
-                    type=c("Large", "Sherman", "Shrew"))
+                    type=c("Large", "Sherman", "Shrew"),
+                    effort=c(0.5, 1, 2)) # proportional to empirical
 
-n.sim <- 100
+n.sim <- 10
 tmax <- 200  # number of years to simulate
 yrs.obs <- (-29:0)+tmax  # years to draw samples from
 
@@ -38,6 +38,7 @@ for(set in 1:nrow(sets)) {
   b <- sets$b[set]  
   mtn <- sets$mtn[set]
   type <- sets$type[set]
+  effort <- sets$effort[set]
   
   Y.real.sample <- read_csv("data/sample_els_H.csv") %>%
     mutate(elBin=el %/% b * b,
@@ -50,11 +51,13 @@ for(set in 1:nrow(sets)) {
     Y.real.sample <- Y.real.sample %>%
       filter(county %in% c("Dolores", "La Plata", "Montezuma", "San Juan"))
   }
-  Y.real <- Y.real.sample %>% group_by(elBin) %>% summarise(Y=n())
+  Y.real <- Y.real.sample %>% group_by(elBin) %>% summarise(Y=round(n()*effort))
   els <- seq(min(Y.real$elBin), max(Y.real$elBin), by=b)
   n.els <- length(els)
   Ytot <- Y.real$Y[match(els, Y.real$elBin)] %>% replace_na(0)
   J <- n_distinct(Y.real.sample$sp)
+  pDet.set <- pDet.full %>% 
+    filter(Species %in% filter(sp.i, Abbrev %in% Y.real.sample$sp)$Species)
   
   
   
@@ -62,12 +65,12 @@ for(set in 1:nrow(sets)) {
   ################################################################################
   ##-- simulation and modelling loop
   ##------------------------------------------------------------------------------
-  gg.NZ <- rmse.ls <- vector("list", n.sim)
+  gg.NZ <- gg.delta <- gg.beta <- rmse.ls <- vector("list", n.sim)
   
   for(s in 1:n.sim) {
     
     ##-- simulate communities
-    comm.true <- simulate_communities(J, els, beta, beta.sd, tmax)
+    comm.true <- simulate_communities(J, els, pDet.set, beta, beta.sd, tmax)
     comm.true$rng.large <- cbind(apply(comm.true$rng[,1,yrs.obs], 1, 
                                        min, na.rm=T),
                                  apply(comm.true$rng[,2,yrs.obs], 1, 
@@ -87,13 +90,13 @@ for(set in 1:nrow(sets)) {
                    n.el=n.els, 
                    y=obs$Y, 
                    Y=Ytot, 
-                   delta=comm.true$pDet, 
+                   delta_shp=as.matrix(comm.true$pDet.par), 
                    LAMBDA=obs$spAbund,
                    interpPatchy=c(scale(obs$interpPatchy)),
                    distAway=matrix(scale(c(obs$binsAway*b)), ncol=J))
-    pars <- c("lambda", "Z")
+    pars <- c("lambda", "Z", "delta", "beta")
     mod <- jags.model(file="code/00_multinom_b_global.txt", data=jags_d,
-                      n.chains=2, n.adapt=500, 
+                      n.chains=4, n.adapt=2000, 
                       inits=list(Z=matrix(1, n.els, J)))
     out <- coda.samples(mod, variable.names=pars, n.iter=1000, thin=5)
     
@@ -112,7 +115,7 @@ for(set in 1:nrow(sets)) {
                           interpPatchy=rep(obs$interpPatchy, each=n.els),
                           interp.rng=c(obs$interp.rng),
                           spAbund=rep(obs$spAbund, each=n.els),
-                          delta=rep(comm.true$pDet, each=n.els))
+                          delta=c(comm.true$pDet.el))
     gg.NZ[[s]] <- full_join(ggs(out, "Z") %>%
                               mutate(bin=str_split_fixed(Parameter, ",", 2)[,1] %>%
                                        str_remove("Z\\[") %>% as.numeric,
@@ -134,6 +137,15 @@ for(set in 1:nrow(sets)) {
       full_join(., true.df, by=c("bin", "spp")) %>%
       mutate(binSize=b, 
              sim=s)
+    
+    gg.delta[[s]] <- ggs(out, "delta") %>%
+      mutate(bin=str_split_fixed(Parameter, ",", 2)[,1] %>%
+               str_remove("delta\\[") %>% as.numeric,
+             spp=str_split_fixed(Parameter, ",", 2)[,2] %>%
+               str_remove("\\]") %>% as.numeric) %>% 
+      full_join(., true.df, by=c("bin", "spp"))
+    
+    gg.beta[[s]] <- ggs(out, "beta")
     
     rmse.ls[[s]] <- data.frame(spp=1:J, 
                                true.lo=comm.true$rng.med[,1],
@@ -161,6 +173,10 @@ for(set in 1:nrow(sets)) {
             paste0("out/RMSE_", b, "_", mtn, "_", type, ".csv"))
   write_csv(do.call('rbind', gg.NZ),
             paste0("out/ggNZ_", b, "_", mtn, "_", type, ".csv"))
+  write_csv(do.call('rbind', gg.delta),
+            paste0("out/ggDelta_", b, "_", mtn, "_", type, ".csv"))
+  write_csv(do.call('rbind', gg.beta),
+            paste0("out/ggBeta_", b, "_", mtn, "_", type, ".csv"))
 }
 
 
