@@ -96,7 +96,7 @@ for(set in 1:nrow(sets)) {
                    distAway=matrix(scale(c(obs$binsAway*b)), ncol=J))
     pars <- c("lambda", "Z", "delta", "beta")
     mod <- jags.model(file="code/00_multinom_b_global.txt", data=jags_d,
-                      n.chains=4, n.adapt=2000, 
+                      n.chains=4, n.adapt=2000, quiet=T,
                       inits=list(Z=matrix(1, n.els, J)))
     out <- coda.samples(mod, variable.names=pars, n.iter=1000, thin=5)
     
@@ -135,17 +135,18 @@ for(set in 1:nrow(sets)) {
       summarise(mn_N.mod=mean(N.mod),
                 mn_prPres=mean(NZ.mod>0)) %>%
       full_join(., true.df, by=c("bin", "spp")) %>%
-      mutate(binSize=b, 
-             sim=s)
+      mutate(sim=s, b=b, mtn=mtn, type=type, effort=effort)
     
     gg.delta[[s]] <- ggs(out, "delta") %>%
       mutate(bin=str_split_fixed(Parameter, ",", 2)[,1] %>%
                str_remove("delta\\[") %>% as.numeric,
              spp=str_split_fixed(Parameter, ",", 2)[,2] %>%
                str_remove("\\]") %>% as.numeric) %>% 
-      full_join(., true.df, by=c("bin", "spp"))
+      full_join(., true.df, by=c("bin", "spp")) %>%
+      mutate(sim=s, b=b, mtn=mtn, type=type, effort=effort)
     
-    gg.beta[[s]] <- ggs(out, "beta")
+    gg.beta[[s]] <- ggs(out, "beta") %>%
+      mutate(sim=s, b=b, mtn=mtn, type=type, effort=effort)
     
     rmse.ls[[s]] <- data.frame(spp=1:J, 
                                true.lo=comm.true$rng.med[,1],
@@ -162,21 +163,26 @@ for(set in 1:nrow(sets)) {
                 obs.hi=sqrt(mean((obs.hi-true.hi)^2, na.rm=T)),
                 mod.lo=sqrt(mean((mod.lo-true.lo)^2, na.rm=T)),
                 mod.hi=sqrt(mean((mod.hi-true.hi)^2, na.rm=T))) %>%
-      mutate(sim=s, b=b, mtn=mtn, type=type)
+      mutate(sim=s, b=b, mtn=mtn, type=type, effort=effort)
     cat("\n--------------\n", 
         "Finished", s, "of", n.sim, "in set", set,
         "\n--------------\n")
   }
   
+  set_pars <- paste(paste0(names(sets), c(as.character(b), 
+                                          as.character(mtn), 
+                                          as.character(type), 
+                                          as.character(effort*100))), 
+                    collapse="_")
   
   write_csv(do.call('rbind', rmse.ls), 
-            paste0("out/RMSE_", b, "_", mtn, "_", type, ".csv"))
+            paste0("out/RMSE_", set_pars, ".csv"))
   write_csv(do.call('rbind', gg.NZ),
-            paste0("out/ggNZ_", b, "_", mtn, "_", type, ".csv"))
+            paste0("out/ggNZ_", set_pars, ".csv"))
   write_csv(do.call('rbind', gg.delta),
-            paste0("out/ggDelta_", b, "_", mtn, "_", type, ".csv"))
+            paste0("out/ggDelta_", set_pars, ".csv"))
   write_csv(do.call('rbind', gg.beta),
-            paste0("out/ggBeta_", b, "_", mtn, "_", type, ".csv"))
+            paste0("out/ggBeta_", set_pars, ".csv"))
 }
 
 
