@@ -188,20 +188,29 @@ RMSE <- map_dfr(dir("out", "RMSE", full.names=T), read_csv)
 
 
 RMSE %>% replace(x=., list=.==0, NA) %>%
-  group_by(b, type) %>%
+  group_by(b, type, effort) %>%
   summarise(mnDiff.lo=mean(mod.lo-obs.lo, na.rm=T), 
             mnDiff.hi=mean(mod.hi-obs.hi, na.rm=T), 
             pctDiff.lo=mean((mod.lo-obs.lo)/obs.lo, na.rm=T)*100,
             pctDiff.hi=mean((mod.hi-obs.hi)/obs.hi, na.rm=T)*100)
 
+ggplot(RMSE, aes(x=(mod.lo-obs.lo)/obs.lo, colour=factor(b))) + 
+  geom_vline(xintercept=0, linetype=2) + 
+  geom_density() + facet_grid(effort~type, scales="free")
+ggplot(RMSE, aes(x=(mod.hi-obs.hi)/obs.hi, colour=factor(b))) + 
+  geom_vline(xintercept=0, linetype=2) + 
+  geom_density() + facet_grid(effort~type, scales="free")
+
 RMSE %>% mutate(diff.lo=mod.lo-obs.lo, diff.hi=mod.hi-obs.hi) %>%
-  select(5:10) %>%
-  pivot_longer(5:6, names_to="boundary", values_to="diff") %>%
+  select(5:11) %>%
+  pivot_longer(6:7, names_to="boundary", values_to="diff") %>%
   mutate(boundary=factor(str_sub(boundary, -2L, -1L), levels=c("lo", "hi")), 
-         b=factor(b, levels=c("25", "50", "100", "200"))) %>%
-  group_by(b, boundary, mtn, type) %>%
+         b=factor(b, levels=c("25", "50", "100", "200")),
+         effort=factor(effort, levels=c(0.5, 1, 2), 
+                       labels=c("50%", "100%", "200%"))) %>%
+  group_by(b, boundary, mtn, type, effort) %>%
   summarise(mnDiff=mean(diff), seDiff=sd(diff)/sqrt(max(sim))) %>%
-  ggplot(aes(x=b, y=mnDiff, ymin=mnDiff-2*seDiff, ymax=mnDiff+2*seDiff,
+  ggplot(aes(x=effort, y=mnDiff, ymin=mnDiff-2*seDiff, ymax=mnDiff+2*seDiff,
              colour=type)) +
   geom_hline(yintercept=0, linetype=2) + 
   geom_point(position=position_dodge(width=0.25)) + 
@@ -214,14 +223,16 @@ RMSE %>% mutate(pct.lo=(mod.lo-obs.lo)/obs.lo*100,
                 pct.hi=(mod.hi-obs.hi)/obs.hi*100,
                 pct.lo=na_if(pct.lo, Inf),
                 pct.hi=na_if(pct.hi, Inf)) %>%
-  select(5:10) %>% 
-  pivot_longer(5:6, names_to="boundary", values_to="diff") %>%
+  select(5:11) %>%
+  pivot_longer(6:7, names_to="boundary", values_to="diff") %>%
   mutate(boundary=factor(str_sub(boundary, -2L, -1L), levels=c("lo", "hi")), 
-         b=factor(b, levels=c("25", "50", "100", "200"))) %>%
-  group_by(b, boundary, mtn, type) %>%
+         b=factor(b, levels=c("25", "50", "100", "200")),
+         effort=factor(effort, levels=c(0.5, 1, 2), 
+                       labels=c("50%", "100%", "200%"))) %>%
+  group_by(b, boundary, mtn, type, effort) %>%
   summarise(mnDiff=mean(diff, na.rm=T), 
             seDiff=sd(diff, na.rm=T)/sqrt(max(sim))) %>%
-  ggplot(aes(x=b, y=mnDiff, ymin=mnDiff-2*seDiff, ymax=mnDiff+2*seDiff,
+  ggplot(aes(x=effort, y=mnDiff, ymin=mnDiff-2*seDiff, ymax=mnDiff+2*seDiff,
              colour=type)) +
   geom_hline(yintercept=0, linetype=2) + 
   geom_point(position=position_dodge(width=0.25)) + 
@@ -246,3 +257,9 @@ RMSE %>% pivot_longer(1:4, names_to="est", values_to="RMSE") %>%
 do.call('rbind', gg.NZ) %>% 
   ggplot(aes(mn_N.mod, log(N))) + geom_point(alpha=0.05)
 
+
+
+ggBeta <- map_dfr(dir("out", "ggBeta", full.names=T), read_csv)
+
+ggplot(filter(ggBeta, Parameter=="beta[1]"), 
+       aes(x=value, colour=factor(b))) + 
