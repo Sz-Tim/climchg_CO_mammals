@@ -21,10 +21,9 @@ pDet.full <- read_csv("data/prDet_processed.csv")
 
 sets <- expand.grid(b=c(25, 50, 100, 200),
                     mtn=c("FR", "SJ"), 
-                    type=c("Large", "Sherman", "Shrew"),
                     effort=c(0.5, 1, 2)) # proportional to empirical
 
-n.sim <- 10
+n.sim <- 50
 tmax <- 200  # number of years to simulate
 yrs.obs <- (-29:0)+tmax  # years to draw samples from
 
@@ -37,13 +36,12 @@ for(set in 1:nrow(sets)) {
   # parameters for 'set' details
   b <- sets$b[set]  
   mtn <- sets$mtn[set]
-  type <- sets$type[set]
+  type <- "all"
   effort <- sets$effort[set]
   
   Y.real.sample <- read_csv("data/sample_els_H.csv") %>%
     mutate(elBin=el %/% b * b,
-           Sample=sp.i$Sample[match(sp, sp.i$Abbrev)]) %>%
-    filter(Sample==type) 
+           Sample=sp.i$Sample[match(sp, sp.i$Abbrev)]) 
   if(mtn=="FR") {
     Y.real.sample <- Y.real.sample %>% 
       filter(county %in% c("Boulder", "Larimer"))
@@ -94,7 +92,7 @@ for(set in 1:nrow(sets)) {
                    LAMBDA=obs$spAbund,
                    interpPatchy=c(scale(obs$interpPatchy)),
                    distAway=matrix(scale(c(obs$binsAway*b)), ncol=J))
-    pars <- c("lambda", "Z", "delta", "beta")
+    pars <- c("lambda", "Z", "beta")
     mod <- jags.model(file="code/00_multinom_b_global.txt", data=jags_d,
                       n.chains=4, n.adapt=2000, quiet=T,
                       inits=list(Z=matrix(1, n.els, J)))
@@ -135,18 +133,18 @@ for(set in 1:nrow(sets)) {
       summarise(mn_N.mod=mean(N.mod),
                 mn_prPres=mean(NZ.mod>0)) %>%
       full_join(., true.df, by=c("bin", "spp")) %>%
-      mutate(sim=s, b=b, mtn=mtn, type=type, effort=effort)
+      mutate(sim=s, b=b, mtn=mtn, effort=effort)
     
-    gg.delta[[s]] <- ggs(out, "delta") %>%
-      mutate(bin=str_split_fixed(Parameter, ",", 2)[,1] %>%
-               str_remove("delta\\[") %>% as.numeric,
-             spp=str_split_fixed(Parameter, ",", 2)[,2] %>%
-               str_remove("\\]") %>% as.numeric) %>% 
-      full_join(., true.df, by=c("bin", "spp")) %>%
-      mutate(sim=s, b=b, mtn=mtn, type=type, effort=effort)
+    # gg.delta[[s]] <- ggs(out, "delta") %>%
+    #   mutate(bin=str_split_fixed(Parameter, ",", 2)[,1] %>%
+    #            str_remove("delta\\[") %>% as.numeric,
+    #          spp=str_split_fixed(Parameter, ",", 2)[,2] %>%
+    #            str_remove("\\]") %>% as.numeric) %>% 
+    #   full_join(., true.df, by=c("bin", "spp")) %>%
+    #   mutate(sim=s, b=b, mtn=mtn, effort=effort)
     
     gg.beta[[s]] <- ggs(out, "beta") %>%
-      mutate(sim=s, b=b, mtn=mtn, type=type, effort=effort)
+      mutate(sim=s, b=b, mtn=mtn, effort=effort)
     
     rmse.ls[[s]] <- data.frame(spp=1:J, 
                                true.lo=comm.true$rng.med[,1],
@@ -163,7 +161,7 @@ for(set in 1:nrow(sets)) {
                 obs.hi=sqrt(mean((obs.hi-true.hi)^2, na.rm=T)),
                 mod.lo=sqrt(mean((mod.lo-true.lo)^2, na.rm=T)),
                 mod.hi=sqrt(mean((mod.hi-true.hi)^2, na.rm=T))) %>%
-      mutate(sim=s, b=b, mtn=mtn, type=type, effort=effort)
+      mutate(sim=s, b=b, mtn=mtn, effort=effort)
     cat("\n--------------\n", 
         "Finished", s, "of", n.sim, "in set", set,
         "\n--------------\n")
