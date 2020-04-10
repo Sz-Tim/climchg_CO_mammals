@@ -4,7 +4,7 @@ model{
   for(i in 1:n.el) {
   
     # weighted species pool
-    p[i,1:J] <- lambda[i,1:J]*delta[i,1:J]*Z[i,1:J]
+    p[i,1:J] <- lambda[i,1:J]*delta*Z[i,1:J]
   
     # detections from a multinomial distribution
     y[i,] ~ dmulti(p[i,1:J]/sum(p[i,1:J]), Y[i])
@@ -14,8 +14,7 @@ model{
         Z[i,j] ~ dbern(psi[i,j])
         logit(psi[i,j]) <- a[j] + 
           beta[1]*distAway[i,j] + 
-          beta[2]*interpPatchy[j] #+
-          #beta[3]*distAway[i,j]*interpPatchy[j]
+          beta[2]*interpPatchy[j]
     }
   }
   
@@ -23,13 +22,12 @@ model{
   alpha ~ dnorm(0, 0.01)
   tau <- 1/(sigma*sigma)
   sigma ~ dnorm(0, 0.01) T(0, )
-  beta[1] ~ dnorm(0, 0.01)
-  beta[2] ~ dnorm(0, 0.01)
-  #beta[3] ~ dnorm(0, 0.01)
+  beta[1] ~ dnorm(0, 0.01) T(, 0)
+  beta[2] ~ dnorm(0, 0.01) T(0, )
   for(j in 1:J) {
     a[j] ~ dnorm(alpha, tau)
+    delta[j] ~ dbeta(delta_shp[j,1], delta_shp[j,2])
     for(i in 1:n.el) {
-      delta[i,j] ~ dbeta(delta_shp[j,1], delta_shp[j,2])
       lambda[i,j] ~ dnorm(LAMBDA[j], 0.0001) T(0, )
     }
   }
