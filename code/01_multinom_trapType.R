@@ -35,13 +35,11 @@
 # Z[i,j] is drawn from a bernoulli distribution, where pr(Z[i,j]==1) = psi[i,j].
 # psi[i,j] = antilogit(a[s] + 
 #                      b[1]*distAway[i,j] + 
-#                      b[2]*interpPatchiness[j] +
-#                      b[3]*distAway[i,j]*interpPatchiness[j])
+#                      b[2]*interpPatchiness[j] 
 # 
 # The model for the sampling-based probability of presence therefore includes:
 #   - distance in meters from interpolated range (outside range only)
 #   - patchiness within interpolated range (bins present / total bins)
-#   - interaction between patchiness & distance
 #
 # The variables are: 
 # n.el: number of elevational bins
@@ -97,6 +95,8 @@ for(set in 1:nrow(sets)) {
   # species information: filter by trapping method
   sp.i <- read_csv("data/by_trapType/Mamm_Summary_Data.csv") %>%
     filter(Sample %in% tr)
+  pDet <- read_csv("data/prDet_processed.csv") %>%
+    mutate(Abbrev=sp.i$Abbrev[match(Species, sp.i$Species)])
   # historic data: rename columns, select species
   Y.df <- read_csv(paste0("data/by_trapType/Mamm_", m, "_", b, "m.csv")) %>%
     select("Elevation", contains(paste0("_", p))) %>%
@@ -111,7 +111,7 @@ for(set in 1:nrow(sets)) {
   n.spp <- ncol(Y)
   Ytot <- rowSums(Y)
   spAbund <- colSums(Y)
-  delta <- sp.i$PrDet[match(names(spAbund), sp.i$Abbrev)]
+  delta_shp <- as.matrix(pDet[match(names(spAbund), pDet$Abbrev),9:10])
   interpPatchy <- rep(0, n.spp)
   binsAway <- interpRng <- matrix(0, nrow=n.el, ncol=n.spp)
   # calculate interpPatchy & binsAway for each species
@@ -134,7 +134,7 @@ for(set in 1:nrow(sets)) {
                  n.el=n.el, 
                  y=Y, 
                  Y=Ytot, 
-                 delta=delta, 
+                 delta_shp=delta_shp, 
                  LAMBDA=spAbund,
                  interpPatchy=c(scale(interpPatchy)),
                  distAway=matrix(scale(c(binsAway*b)), ncol=n.spp))
@@ -150,7 +150,7 @@ for(set in 1:nrow(sets)) {
                        distAway_sc=c(scale(c(binsAway)*b)),
                        interpPatchy=rep(interpPatchy, each=n.el),
                        spAbund=rep(spAbund, each=n.el),
-                       delta=rep(delta, each=n.el))
+                       delta=rep(delta_shp[,1]/rowSums(delta_shp), each=n.el))
   
   
   
@@ -158,7 +158,7 @@ for(set in 1:nrow(sets)) {
   ## Run JAGS model
   ########
   
-  mod <- c("simple", "full")[1]
+  mod <- c("simple", "full")[2]
   #--- parameters to store
   if(mod=="simple") pars <- c("Z", "lambda", "beta", "alpha", "sigma") 
   if(mod=="full") pars <- c("lambda", "Z", "beta", "a", "sigma")
@@ -173,10 +173,7 @@ for(set in 1:nrow(sets)) {
                      n.chains=4, n.adapt=5000, n.update=1000, 
                      n.iter=1000, n.thin=5)
   stopCluster(cl)
-  # j.mod <- jags.model(file="code/multinom_b_global.txt", 
-  #                   data=jags_d, n.chains=3, n.adapt=5000, 
-  #                   inits=list(Z=matrix(1, n.el, n.spp)))
-  # out <- coda.samples(j.mod, variable.names=pars, n.iter=5000, thin=10)
+  
   
   
   
