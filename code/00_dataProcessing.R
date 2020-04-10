@@ -1,23 +1,27 @@
+
 library(fitdistrplus); library(tidyverse)
-
-
 
 # aggregating occurrence data
 
 f.path <- dir("data/orig/", "*ata.xlsx", full.names=T)
 
-obs <- vector("list", length(f.path))
+H.o <- C.o <- vector("list", length(f.path))
 for(f in f.path) {
   f.sheets <- readxl::excel_sheets(f) %>% 
     grep(pattern="Sampling", value=T, invert=T) %>% 
     grep(pattern="UNK", value=T, invert=T)
-  obs[[f]] <- map_dfr(f.sheets, 
-                 ~readxl::read_xlsx(f, .x, range=readxl::cell_cols("A:B")) %>%
-                   setNames(c("county", "el")) %>% mutate(sp=.x))
+  H.o[[f]] <- map_dfr(f.sheets, 
+                      ~readxl::read_xlsx(f, .x, range=readxl::cell_cols("A:B")) %>%
+                        setNames(c("county", "el")) %>% mutate(sp=.x))
+  C.o[[f]] <- map_dfr(f.sheets, 
+                      ~readxl::read_xlsx(f, .x, range=readxl::cell_cols("I:J")) %>%
+                        setNames(c("county", "el")) %>% mutate(sp=.x))
 }
-obs <- do.call('rbind', obs)
+H.o <- do.call('rbind', H.o)
+C.o <- do.call('rbind', C.o)
 
-write_csv(obs, "data/sample_els_H.csv")
+write_csv(H.o, "data/sample_els_H.csv")
+write_csv(C.o, "data/sample_els_C.csv")
 
 
 
