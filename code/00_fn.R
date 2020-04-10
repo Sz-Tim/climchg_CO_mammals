@@ -30,8 +30,8 @@ simulate_communities <- function(J, els, pDet, beta, beta.sd, tmax) {
   #  Z: occurrences [yr, j, el]
   #  rng: ranges [j, minBin/maxBin, yr]
   
-  r.sd <- runif(J, 0, 1)
-  K <- runif(J, 1e2, 1e4)
+  r.sd <- runif(J, 0, 1.2)
+  K <- runif(J, 1e2, 1e5)
   
   els.std <- scale(els)
   b <- matrix(rnorm(J*length(beta), beta, beta.sd), ncol=J)
@@ -39,7 +39,7 @@ simulate_communities <- function(J, els, pDet, beta, beta.sd, tmax) {
   
   N <- purrr::map(seq_along(els), ~ricker(J, tmax, X[.,] %*% b, r.sd, K)) %>%
     unlist %>% array(dim=c(tmax, J, length(els)))
-  Z <- N > 1
+  Z <- N > 0.5
   
   rng <- map(1:tmax, ~t(apply(Z[.,,], 1, function(x) {
     if(any(x)) {
@@ -49,12 +49,46 @@ simulate_communities <- function(J, els, pDet, beta, beta.sd, tmax) {
     }
   }))) %>% unlist %>% array(dim=c(J, 2, tmax))
   
+  rng.large <- cbind(apply(rng[,1,yrs.obs], 1, 
+                                     min, na.rm=T),
+                               apply(rng[,2,yrs.obs], 1, 
+                                     max, na.rm=T))
+  rng.large[is.infinite(rng.large)] <- NA
+  rng.med <- cbind(apply(rng[,1,yrs.obs], 1,
+                                   median, na.rm=T),
+                             apply(rng[,2,yrs.obs], 1, 
+                                   median, na.rm=T))
+  interp.rng.true <- matrix(0, nrow=length(els), ncol=J)
+  for(j in 1:J) {
+    # true interpolated range
+    if(!is.na(rng.large[j,1])) {
+      interp.rng.j <- rng.large[j,1]:rng.large[j,2]
+      interp.rng.true[,j] <- 1:length(els) %in% interp.rng.j
+    }
+  }
+  
   pDet.par <- pDet %>% select(shp1, shp2) %>% as.matrix
+  
+  pDet.ar <- N*NA
+  N.int <- ceiling(N)
+  for(i in 1:n.els) {
+    for(j in 1:J) {
+      for(k in yrs.obs) {
+        pDet.ar[k,j,i] <- mean(rbeta(N.int[k,j,i], pDet$shp1[j], pDet$shp2[j]))
+      }
+    }
+  }
+  pDet.ar[is.nan(pDet.ar)] <- 0
+  pDet.ar[is.na(pDet.ar)] <- 0
   
   pDet.el <- map(1:n.els, ~rbeta(J, pDet$shp1, pDet$shp2)) %>%
     do.call('rbind', .) 
   
-  return(list(N=N, Z=Z, rng=rng, pDet.par=pDet.par, pDet.el=pDet.el))
+  
+  
+  return(list(N=N, Z=Z, rng=rng, rng.med=rng.med, rng.large=rng.large,
+              interp.rng.true=interp.rng.true,
+              pDet.par=pDet.par, pDet.el=pDet.el, pDet.ar=pDet.ar))
 }
 
 
@@ -76,9 +110,13 @@ sample_community <- function(J, els, yrs.obs, comm.true, Ytot) {
   Y <- matrix(0, nrow=length(els), ncol=J)
   for(i in seq_along(els)) {
     if(Ytot[i] > 0) {
-      for(k in yrs.samp[[i]]) {
-        spp.obs <- sample(1:J, 1, prob=comm.true$N[k,,i]*comm.true$pDet.el[i,])
-        Y[i,spp.obs] <- Y[i,spp.obs] + 1
+      if(any(comm.true$Z[yrs.samp[[i]],,i])) {
+        for(k in yrs.samp[[i]]) {
+          spp.obs <- sample(1:J, 1, prob=comm.true$N[k,,i]*comm.true$pDet.ar[k,,i])
+          Y[i,spp.obs] <- Y[i,spp.obs] + 1
+        }  
+      } else {
+        Ytot[i] <- 0
       }
     }
   }
