@@ -241,7 +241,7 @@ for(set in 1:nrow(sets)) {
 
 out.all <- do.call("rbind", sets.out) %>% 
   arrange(Abbrev, Elevation, period, mtn)
-write_csv(out.all, paste0("out/all_", sets$bin[1], "m_bins_ALL_SPECIES.csv"))
+write_csv(out.all, paste0("out/all_", sets$bin[1], "m_bins_ALL_SPECIES_NEW.csv"))
 
 
 ########
@@ -262,7 +262,7 @@ SJ_obs_C <- read_csv("data/by_trapType/Mamm_SJ_RawData.csv") %>%
   gather(Abbrev, Elevation) %>% filter(!is.na(Elevation)) %>% unique
 
 #--- model output
-out.all <- read_csv(paste0("out/all_", sets$bin[1], "m_bins_ALL_SPECIES.csv"))
+out.all <- read_csv(paste0("out/all_", sets$bin[1], "m_bins_ALL_SPECIES_NEW.csv"))
 
 #--- probability of presence
 ggplot(filter(out.all, mtn=="FR"), 
@@ -313,6 +313,120 @@ ggplot(filter(out.all, binsAway>0), aes(distAway, mn_prPres, colour=set)) +
 ggsave(paste0("figs/distanceByDelta", sets$bin[1], "m_ALL_SPECIES.pdf"), 
        width=12, height=12, dpi=300)
 
+#--- interpolated range comparison
+ggplot(out.all, aes(x=Elevation, y=Abbrev, group=Abbrev)) +
+  geom_line(data=filter(out.all, mn_prPres>0.05), size=0.25) + 
+  geom_line(data=filter(out.all, binsAway==0), size=1) + 
+  facet_wrap(~set) + coord_flip() + 
+  theme(axis.text.x=element_text(angle=270, hjust=0, vjust=0.5))
+
+
+ggplot(out.all, aes(x=Elevation, y=Abbrev, colour=period)) +
+  geom_line(data=filter(out.all, mn_prPres>0.05), size=0.25, 
+            position=position_nudge(y=0.5)) + 
+  geom_line(data=filter(out.all, binsAway==0), size=1, 
+            position=position_dodge(width=0.5)) + 
+  facet_grid(mtn~.) + coord_flip() + 
+  theme(axis.text.x=element_text(angle=270, hjust=0, vjust=0.5))
+
+preds.df <- out.all %>% 
+  filter(Abbrev %in% filter(sp.i, FR_Hnum > 10 | SJ_Hnum > 10)$Abbrev) %>%
+  mutate(obs=binsAway==0, modPres=mn_prPres>0.05) %>%
+  select(Elevation, Abbrev, mtn, period, modPres, obs) %>%
+  pivot_longer(5:6, names_to="Source", values_to="Prediction") %>%
+  filter(Prediction) %>% 
+  group_by(Abbrev, mtn, period, Source) %>% 
+  summarise(elMin=min(Elevation), elMax=max(Elevation), 
+            elMid=median(elMin, elMax)) %>%
+  group_by(Abbrev, mtn, Source) %>% arrange(Abbrev, mtn, Source, period) %>%
+  mutate(minChg=first(elMin)-last(elMin),
+         maxChg=first(elMax)-last(elMax),
+         midChg=first(elMid)-last(elMid),
+         minDir=case_when(minChg <= -100 ~ "Decrease",
+                          minChg > -100 & minChg < 100 ~ "No change",
+                          minChg >= 100 ~ "Increase"),
+         maxDir=case_when(maxChg <= -100 ~ "Decrease",
+                          maxChg > -100 & maxChg < 100 ~ "No change",
+                          maxChg >= 100 ~ "Increase"),
+         midDir=case_when(midChg <= -100 ~ "Decrease",
+                          midChg > -100 & midChg < 100 ~ "No change",
+                          midChg >= 100 ~ "Increase"),
+         Species=sp.i$Species[match(Abbrev, sp.i$Abbrev)],
+         Genus=str_split_fixed(Species, " ", 2)[,1])
+write_csv(preds.df, "out/species_predictions_50m_bins_all_spp.csv")
+ggplot(preds.df, aes(x=Abbrev, ymin=elMin, ymax=elMax, 
+                     size=Source, colour=minChg)) + 
+  geom_linerange(data=filter(preds.df, period=="H"), 
+                 position=position_nudge(x=-.15)) + 
+  geom_linerange(data=filter(preds.df, period=="C"),
+            position=position_nudge(x=.15)) + 
+  facet_grid(mtn~., scales="free_x") +
+  scale_size_manual(values=c(0.5, 1)) +
+  scale_colour_gradient2("Change in\nlower boundary",
+                         low="#9e0142", mid="gray80", high="#5e4fa2") +
+  theme(axis.text.x=element_text(angle=270, hjust=0, vjust=0.5))
+ggplot(preds.df, aes(x=Abbrev, ymin=elMin, ymax=elMax, 
+                     size=Source, colour=maxChg)) + 
+  geom_linerange(data=filter(preds.df, period=="H"), 
+                 position=position_nudge(x=-.15)) + 
+  geom_linerange(data=filter(preds.df, period=="C"),
+                 position=position_nudge(x=.15)) + 
+  facet_grid(mtn~., scales="free_x") +
+  scale_size_manual(values=c(0.5, 1)) +
+  scale_colour_gradient2("Change in\nupper boundary", 
+                         low="#9e0142", mid="gray80", high="#5e4fa2") +
+  theme(axis.text.x=element_text(angle=270, hjust=0, vjust=0.5))
+ggplot(preds.df, aes(x=Abbrev, ymin=elMin, ymax=elMax, 
+                     size=Source, colour=midChg)) + 
+  geom_linerange(data=filter(preds.df, period=="H"), 
+                 position=position_nudge(x=-.15)) + 
+  geom_linerange(data=filter(preds.df, period=="C"),
+                 position=position_nudge(x=.15)) + 
+  facet_grid(mtn~., scales="free_x") +
+  scale_size_manual(values=c(0.5, 1)) +
+  scale_colour_gradient2("Change in\nmidpoint", 
+                         low="#9e0142", mid="gray80", high="#5e4fa2") +
+  theme(axis.text.x=element_text(angle=270, hjust=0, vjust=0.5))
+
+
+chg_cols <- c("Decrease"="#9e0142", "No change"="gray50", "Increase"="#3288bd")
+ggplot(preds.df, aes(x=Abbrev, ymin=elMin, ymax=elMax, 
+                     size=Source, colour=minDir)) + 
+  geom_linerange(data=filter(preds.df, period=="H"), 
+                 position=position_nudge(x=-.15)) + 
+  geom_linerange(data=filter(preds.df, period=="C"),
+                 position=position_nudge(x=.15)) + 
+  facet_wrap(~mtn, scales="free_x", ncol=1) +
+  scale_size_manual(values=c(0.75, 1.25)) +
+  scale_colour_manual("Change in\nlower boundary", values=chg_cols) +
+  theme(axis.text.x=element_text(angle=270, hjust=0, vjust=0.5))
+ggsave("figs/chg_lower.pdf", width=7, height=5)
+ggplot(preds.df, aes(x=Abbrev, ymin=elMin, ymax=elMax, 
+                     size=Source, colour=maxDir)) + 
+  geom_linerange(data=filter(preds.df, period=="H"), 
+                 position=position_nudge(x=-.15)) + 
+  geom_linerange(data=filter(preds.df, period=="C"),
+                 position=position_nudge(x=.15)) + 
+  facet_wrap(~mtn, scales="free_x", ncol=1) +
+  scale_size_manual(values=c(0.75, 1.25)) +
+  scale_colour_manual("Change in\nupper boundary", values=chg_cols) +
+  theme(axis.text.x=element_text(angle=270, hjust=0, vjust=0.5))
+ggsave("figs/chg_upper.pdf", width=7, height=5)
+ggplot(preds.df, aes(x=Abbrev, ymin=elMin, ymax=elMax, 
+                     size=Source, colour=midDir)) + 
+  geom_linerange(data=filter(preds.df, period=="H"), 
+                 position=position_nudge(x=-.15)) + 
+  geom_linerange(data=filter(preds.df, period=="C"),
+                 position=position_nudge(x=.15)) + 
+  facet_wrap(~mtn, scales="free_x", ncol=1) +
+  scale_size_manual(values=c(0.75, 1.25)) +
+  scale_colour_manual("Change in\nmidpoint", values=chg_cols) +
+  theme(axis.text.x=element_text(angle=270, hjust=0, vjust=0.5))
+ggsave("figs/chg_midpt.pdf", width=7, height=5)
+
+
+
+
 
 dist.ctr <- attr(scale(c(binsAway*b)), "scaled:center")
 dist.scl <- attr(scale(c(binsAway*b)), "scaled:scale")
@@ -328,7 +442,6 @@ intP.seq <- seq(min(jags_d$interpPatchy), max(jags_d$interpPatchy), length.out=1
 a.df <- filter(gg.a, Parameter=="a[37]")
 b1.df <- filter(gg.b, Parameter=="beta[1]")
 b2.df <- filter(gg.b, Parameter=="beta[2]")
-b3.df <- filter(gg.b, Parameter=="beta[3]")
 plot(NA, NA, xlim=c(0, max(dist.seq)*dist.scl+dist.ctr), ylim=c(0,1), 
      xlab="Distance from interpolated range", 
      ylab="Relative probability of presence",
@@ -349,50 +462,23 @@ for(i in 1:nrow(b2.df)) {
 }
 
 
-plot(NA, NA, xlim=c(0, max(dist.seq)*dist.scl+dist.ctr), ylim=c(0,1), 
-     xlab="Distance from interpolated range", 
-     ylab="Relative probability of presence",
-     main="Patchiness:Distance interaction | delta")
-for(i in 1:length(intP.int)) {
-  for(j in 1:nrow(b3.df)) {
-    lines(dist.seq*dist.scl + dist.ctr, 
-          antilogit(dist.seq*intP.int[i]*b3.df$value[j]), 
-          col=rgb(i==1,i==2,i==3,0.05))
-  }
-}
 
 s <- 8
 plot(NA, NA, xlim=c(0, max(dist.seq)*dist.scl+dist.ctr), ylim=c(0,1), 
      xlab="Distance from interpolated range", 
      ylab="Relative probability of presence",
      main="Detection:Distance interaction | patchiness")
-for(i in 1:length(delt.int)) {
-  for(j in 1:nrow(b2.df)) {
-    lines(dist.seq*dist.scl + dist.ctr, 
-          antilogit(filter(gg.a, Parameter=="a[37]")$value[j] + 
-                      dist.seq*b1.df$value[j] + 
-                      interpPatchy[s]*b2.df$value[j] +
-                      logit(delt.int[i])*b3.df$value[j] +
-                      dist.seq*logit(delt.int[i])*b4.df$value[j]), 
-          col=rgb(i==1,i==2,i==3,0.05))
-  }
+for(j in 1:nrow(b2.df)) {
+  lines(dist.seq*dist.scl + dist.ctr, 
+        antilogit(filter(gg.a, Parameter=="a[37]")$value[j] + 
+                    dist.seq*b1.df$value[j] + 
+                    interpPatchy[s]*b2.df$value[j]), 
+        col=rgb(i==1,i==2,i==3,0.05))
 }
 legend("topright", title="Detection", col=c("red", "green", "blue"), lwd=1,
        legend=round(delt.int, 3))
 
 
 
-plot(NA, NA, xlim=c(0, max(dist.seq)*dist.scl+dist.ctr), ylim=c(0,1), 
-     xlab="Distance from interpolated range", 
-     ylab="Relative probability of presence",
-     main="Patchiness & distance effect | delta")
-for(i in 1:length(intP.int)) {
-  for(j in 1:nrow(b3.df)) {
-    lines(dist.seq*dist.scl + dist.ctr, 
-          antilogit(a.df$value[j] + dist.seq*b1.df$value[j] +
-                      intP.int[i]*b2.df$value[j] +
-                      dist.seq*intP.int[i]*b3.df$value[j]), 
-          col=rgb(i==1,i==2,i==3,0.05))
-  }
-}
+
 
