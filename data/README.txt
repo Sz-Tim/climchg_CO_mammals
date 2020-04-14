@@ -21,7 +21,28 @@ minDir: direction of minChg, with threshold of ±100m (exactly 100 = change)
 
 
 
-2. all_50m_bins_ALL_SPECIES_NEW.csv
+2. species_predictions_50m_spp_10obs.csv
+
+Summary of elevational distribution for each species with at least 10 observations in the historic dataset for either SJ or FR
+
+Abbrev: species abbreviation
+mtn: mountain range
+period: time period / era
+Source: obs (observed) modPres (posterior mean > 0.05, meaning <95% prAbsence)
+elMin: minimum elevation observed or predicted
+elMax: maximum elevation observed or predicted
+elMid: median of elMax and elMin
+minChg: change in elMin across periods, by source and mtn (negative: C < H)
+maxChg: change in elMax across periods, by source and mtn (negative: C < H)
+midChg: change in elMid across periods, by source and mtn (negative: C < H)
+minDir: direction of minChg, with threshold of ±100m (exactly 100 = change)
+minDir: direction of minChg, with threshold of ±100m (exactly 100 = change)
+minDir: direction of minChg, with threshold of ±100m (exactly 100 = change)
+
+
+
+
+3. all_50m_bins_ALL_SPECIES_NEW.csv
 
 Full predictions for each species x elevational bin x mtn x period
 
@@ -46,7 +67,7 @@ set: mtn_binSize_period
 
 
 
-3. prDet_processed.csv
+4. prDet_processed.csv
 
 Individual detection probabilities for each species. If there were at least 2 observations for a species, a Beta distribution was fit using the R function fitdistrplus::fitdist(). For species with < 2 values, the whole genus was pooled. For genera with < 2 values, the whole family was pooled. The parameters for the Beta distribution serve as the prior distribution for each species in the full model. 
 
@@ -63,7 +84,7 @@ shp2: beta = second shape parameter for Beta distribution
 
 
 
-4. sample_els_H.csv
+5. sample_els_H.csv
 
 Historic elevations across all species.
 
@@ -73,7 +94,7 @@ sp
 
 
 
-4. sample_els_C.csv
+6. sample_els_C.csv
 
 Contemporary elevations across all species.
 
