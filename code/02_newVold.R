@@ -105,14 +105,14 @@ for(set in 1:nrow(sets)) {
     out.new <- jags.parfit(cl=cl, data=jags_d, params=pars,
                            model="code/00_multinom_b_global.txt", 
                            inits=list(Z=matrix(1, n.els, J)),
-                           n.thin=5, n.chains=4, n.adapt=5000, n.update=1000)
+                           n.thin=5, n.chains=4, n.adapt=5000, n.update=100)
     stopCluster(cl)
     
     cl <- makeCluster(4)
     out.old <- jags.parfit(cl=cl, data=jags_d, params=pars,
                            model="code/00_multinom_b_global_deltaAsData.txt", 
                            inits=list(Z=matrix(1, n.els, J)),
-                           n.thin=5, n.chains=4, n.adapt=5000, n.update=1000)
+                           n.thin=5, n.chains=4, n.adapt=5000, n.update=100)
     stopCluster(cl)
     
     
