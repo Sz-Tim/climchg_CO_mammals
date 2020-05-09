@@ -20,13 +20,13 @@ pDet.full <- read_csv("data/prDet_processed.csv")
 #   r.ijk ~ Norm(r.mn.ij*(1 - N[k-1,]/K), r.sd.j) 
 
 sets <- expand.grid(b=c(200, 100, 50),
-                    mtn=c("FR", "SJ")[1], 
+                    mtn=c("FR", "SJ")[2], 
                     type="all",#c("Large", "Sherman+Shrew"),
                     effort=c(0.5, 1, 2),
                     era=c("H", "C")[2]) # proportional to empirical)
                     
 
-n.sim <- 2
+n.sim <- 50
 tmax <- 200  # number of years to simulate
 yrs.obs <- (-29:0)+tmax  # years to draw samples from
 
@@ -217,10 +217,10 @@ RMSE %>% filter(!is.na(obs.lo)) %>%
          b=factor(b, levels=c("25", "50", "100", "200")),
          effort=factor(effort, levels=c(0.5, 1, 2), 
                        labels=c("50%", "100%", "200%"))) %>%
-  group_by(b, boundary, type, effort, era) %>%
+  group_by(b, boundary, mtn, effort, era) %>%
   summarise(mnDiff=mean(diff), seDiff=sd(diff)/sqrt(max(sim))) %>%
   ggplot(aes(x=effort, y=mnDiff, ymin=mnDiff-2*seDiff, ymax=mnDiff+2*seDiff,
-             colour=b)) +
+             colour=b, shape=mtn)) +
   geom_hline(yintercept=0, linetype=2) + 
   geom_point(position=position_dodge(width=0.25)) + 
   geom_linerange(position=position_dodge(width=0.25)) + 
@@ -239,22 +239,56 @@ RMSE %>% filter(!is.na(obs.lo)) %>%
          diff.hi=(mod.hi.rmse-obs.hi.rmse)/obs.hi.rmse) %>%
   select(1:6,11:12) %>% ungroup %>%
   pivot_longer(7:8, names_to="boundary", values_to="diff") %>%
-  mutate(boundary=factor(str_sub(boundary, -2L, -1L), levels=c("lo", "hi")), 
+  mutate(boundary=factor(str_sub(boundary, -2L, -1L), levels=c("lo", "hi"),
+                         labels=c("Lower boundary", "Upper boundary")), 
          b=factor(b, levels=c("25", "50", "100", "200")),
          effort=factor(effort, levels=c(0.5, 1, 2), 
-                       labels=c("50%", "100%", "200%"))) %>%
-  group_by(b, boundary, type, effort, era) %>%
+                       labels=c("50%", "100%", "200%")),
+         era=factor(era, levels=c("H", "C"), 
+                    labels=c("Historical", "Contemporary"))) %>%
+  group_by(b, boundary, mtn, effort, era) %>%
   summarise(mnDiff=mean(diff, na.rm=T), 
             seDiff=sd(diff, na.rm=T)/sqrt(max(sim))) %>%
   ggplot(aes(x=effort, y=mnDiff, ymin=mnDiff-2*seDiff, ymax=mnDiff+2*seDiff,
-             colour=b)) +
+             colour=b, shape=mtn)) +
   geom_hline(yintercept=0, linetype=2) + 
-  geom_point(position=position_dodge(width=0.25)) + 
+  geom_point(position=position_dodge(width=0.25), size=1.5) + 
   geom_linerange(position=position_dodge(width=0.25)) + 
   facet_grid(era~boundary) + 
+  scale_shape_manual("Mountain\nRange", values=c(1,5)) +
   scale_y_continuous(labels=scales::percent) +
   scale_colour_brewer("Bin size", type="qual", palette=2) +
-  labs(x="Effort", y="Change in RMSE (%)")
+  labs(x="Sampling effort relative to empirical", 
+       y="Change in RMSE relative to empirical (mean ± 2 SE)")
+ggsave("figs/RMSE_sims_pctChg.pdf", width=6, height=5)
+
+
+write_csv(RMSE, "out/simulations_out.csv")
+
+RMSE %>% filter(!is.na(obs.lo)) %>%
+  group_by(b, mtn, type, effort, era, sim) %>%
+  summarise(obs.lo.rmse=sqrt(mean((obs.lo-true.lo)^2, na.rm=T)),
+            mod.lo.rmse=sqrt(mean((mod.lo-true.lo)^2, na.rm=T)),
+            obs.hi.rmse=sqrt(mean((obs.hi-true.hi)^2, na.rm=T)),
+            mod.hi.rmse=sqrt(mean((mod.hi-true.hi)^2, na.rm=T))) %>%
+  write_csv("out/simulations_RMSE.csv")
+  
+  mutate(diff.lo=(mod.lo.rmse-obs.lo.rmse)/obs.lo.rmse,
+         diff.hi=(mod.hi.rmse-obs.hi.rmse)/obs.hi.rmse) %>%
+  select(1:6,11:12) %>% ungroup %>%
+  pivot_longer(7:8, names_to="boundary", values_to="diff") %>%
+  mutate(boundary=factor(str_sub(boundary, -2L, -1L), levels=c("lo", "hi"),
+                         labels=c("Lower boundary", "Upper boundary")), 
+         b=factor(b, levels=c("25", "50", "100", "200")),
+         effort=factor(effort, levels=c(0.5, 1, 2), 
+                       labels=c("50%", "100%", "200%")),
+         era=factor(era, levels=c("H", "C"), 
+                    labels=c("Historical", "Contemporary"))) %>%
+  group_by(b, boundary, mtn, effort, era) %>%
+  summarise(mnDiff=mean(diff, na.rm=T), 
+            seDiff=sd(diff, na.rm=T)/sqrt(max(sim)),
+            minDiff=min(diff, na.rm=T), 
+            maxDiff=max(diff, na.rm=T))
 
 # RMSE %>% pivot_longer(1:4, names_to="est", values_to="RMSE") %>%
 #   mutate(boundary=str_sub(est, -2L, -1L), est=str_sub(est, 1, 3)) %>%
@@ -294,4 +328,48 @@ sapply(1:20, FUN=function(x) mean(rbeta(20, 14.9, 19.5)))
 
 
 
+
+
+
+
+RMSE.sum %>% group_by(effort) %>% 
+  summarise(mn.lo=mean((mod.lo.rmse-obs.lo.rmse)/obs.lo.rmse)*100,
+            mn.hi=mean((mod.hi.rmse-obs.hi.rmse)/obs.hi.rmse)*100) 
+
+RMSE.sum %>% filter(b==50 & effort==1) %>% 
+  group_by(mtn, era) %>% 
+  summarise(obs.lo=mean((obs.lo.rmse)),
+            obs.hi=mean((obs.hi.rmse)),
+            mod.lo=mean((mod.lo.rmse)),
+            mod.hi=mean((mod.hi.rmse))) %>%
+  group_by(mtn) %>% 
+  summarise(obs.lo=first(obs.lo)-last(obs.lo),
+            mod.lo=first(mod.lo)-last(mod.lo),
+            obs.hi=first(obs.hi)-last(obs.hi),
+            mod.hi=first(mod.hi)-last(mod.hi))
+
+
+for(mtn.i in c("FR", "SJ")) {
+  for(era.i in c("H", "C")) {
+    cat("-------------\n", mtn.i, era.i, "\n-------------\n")
+    RMSE.sum %>% ungroup %>% mutate(b=as.character(b),
+                                    effort=as.character(effort)) %>%
+      filter(mtn==mtn.i & era==era.i) %>%
+      aov((mod.lo.rmse-obs.lo.rmse)/obs.lo.rmse ~ effort + b, data=.) %>%
+      TukeyHSD() %>% print
+  }
+}
+
+
+
+for(mtn.i in c("FR", "SJ")) {
+  for(era.i in c("H", "C")) {
+    cat("-------------\n", mtn.i, era.i, "\n-------------\n")
+    RMSE.sum %>% ungroup %>% mutate(b=as.character(b),
+                                    effort=as.character(effort)) %>%
+      filter(mtn==mtn.i & era==era.i) %>%
+      aov((mod.hi.rmse-obs.hi.rmse)/obs.hi.rmse ~ effort + b, data=.) %>%
+      TukeyHSD() %>% print
+  }
+}
 
