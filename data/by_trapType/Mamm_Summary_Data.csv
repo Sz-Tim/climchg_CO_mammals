@@ -6,7 +6,7 @@ Large,Sciurus aberti,Scabe,0.241,both,1641,2638,38,1724,2673,12,2750,2850,2,2271
 Large,Tamiasciurus  hudsonicus,Tahud,0.241,both,1766,3475,143,1882,3356,126,2134,3321,5,2338,3496,36
 Large,Urocitellus elegans,Urele,0.241,frng,1796,2678,53,2377,2438,9,NA,NA,NA,NA,NA,NA
 Sherman,Ammospermophilus leucurus,Amleu,0.241,sanj,NA,NA,NA,NA,NA,NA,1418,2134,13,1506,1735,6
-Sherman,Callospermophilus lateralis,Calat,0.17,both,1760,3388,135,1939,3356 ,100,1981,3109,33,2227,3524,70
+Sherman,Callospermophilus lateralis,Calat,0.17,both,1760,3388,135,1939,3356,100,1981,3109,33,2227,3524,70
 Sherman,Chaetodipus hispidus,Chhis,0.22,frng,1524,1632,3,1941,1941,1,NA,NA,NA,NA,NA,NA
 Sherman,Dipodomys ordii,Diord,0.22,both,1524,1890,29,NA,NA,0,1460,1640,6,1754,1759,2
 Sherman,Ictidomys tridecemlineatus,Ictri,0.241,frng,1492,1876,48,1545,1550,2,NA,NA,NA,NA,NA,NA
@@ -31,7 +31,7 @@ Sherman,Reithrodontomy megalotis,Remeg,0.234,both,1531,2084,53,1682,2239,169,161
 Sherman,Reithrodontomy montanus,Remon,0.233,frng,1524,1628,4,NA,NA,0,NA,NA,NA,NA,NA,NA
 Sherman,Tamias minimus,Tamin,0.24,both,1796,3600,302,1546,3492,445,1981,3407,130,1503,3559,1057
 Sherman,Tamias quadrivittatus,Taqua,0.238,both,1585,2795,49,1721,2659,60,1840,3386,29,2410,2570,13
-Sherman,Tamias rufus,Taruf,0.231,sanj,NA,NA,NA,NA,NA,NA,1418,2819,22,1503,2348,50
+Sherman,Tamias rufus,Taruf,0.231,sanj,NA,NA,NA,NA,NA,NA,1418,2264,22,1503,2348,50
 Sherman,Tamias umbrinus,Taumb,0.325,frng,2134,3414,77,2343,3385,59,NA,NA,NA,NA,NA,NA
 Sherman,Xerospermophilus spilosoma,Xespi,0.241,both,1646,1646,1,NA,NA,0,2070,2070,3,NA,NA,0
 Sherman,Zapus hudsonicus preblei,Zahud,0.293,both,1553,1634,32,1726,2130,6,NA,NA,0,1944,1944,1
